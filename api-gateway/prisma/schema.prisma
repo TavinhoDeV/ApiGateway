@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./gateway.db"
+}
+
+model User {
+  id           String    @id @default(uuid())
+  name         String
+  email        String    @unique
+  passwordHash String
+  role         String    @default("user") // "admin" | "user"
+  plan         String    @default("free") // "free" | "pro" | "enterprise"
+  apiKey       String    @unique
+  active       Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  logs         RequestLog[]
+}
+
+model RequestLog {
+  id           String   @id @default(uuid())
+  userId       String?
+  user         User?    @relation(fields: [userId], references: [id])
+  method       String
+  path         String
+  statusCode   Int
+  responseTimeMs Int
+  ip           String
+  userAgent    String?
+  upstream     String?  // qual serviço downstream foi chamado
+  rateLimited  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model RateLimit {
+  id        String   @id @default(uuid())
+  key       String   @unique // "ip:x.x.x.x" ou "user:uuid"
+  count     Int      @default(0)
+  resetAt   DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
